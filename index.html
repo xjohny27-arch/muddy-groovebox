@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>MUDDY // groovebox</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#15130f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15130f;
+  --panel:#211d16;
+  --panel-2:#2a2419;
+  --line:#3a3225;
+  --text:#cdc6b4;
+  --dim:#8a8270;
+  --amber:#e8a33d;
+  --amber-dim:#7a5a25;
+  --red:#c5483b;
+  --olive:#7fa563;
+  --olive-dim:#3c4a30;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Mono',monospace;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.disp{
+  font-family:'Oswald',sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.app{max-width:1180px;margin:0 auto;padding:14px 14px 40px;}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:10px 16px;margin-bottom:14px;flex-wrap:wrap;gap:10px;
+}
+.brand{display:flex;align-items:baseline;gap:10px;}
+.brand h1{font-size:20px;color:var(--amber);margin:0;letter-spacing:.12em;}
+.brand span{font-size:10px;color:var(--dim);}
+.transport{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+button{
+  font-family:'IBM Plex Mono',monospace;
+  background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+  border-radius:4px;padding:6px 12px;cursor:pointer;font-size:12px;
+  letter-spacing:.05em;
+}
+button:hover{border-color:var(--amber-dim);}
+button.primary{background:var(--amber);color:#1a1610;border-color:var(--amber);font-weight:600;}
+button.primary.playing{background:var(--red);border-color:var(--red);color:#fff;}
+button.ghost{background:transparent;}
+.field{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);}
+.field input[type=number]{
+  width:52px;background:var(--bg);border:1px solid var(--line);color:var(--amber);
+  font-family:'IBM Plex Mono',monospace;border-radius:3px;padding:3px 5px;font-size:12px;
+}
+.section-label{font-size:11px;color:var(--dim);margin:18px 0 8px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line);}
+
+/* PADS */
+.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.pad{
+  position:relative;background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:8px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;
+  cursor:pointer;transition:border-color .08s, transform .04s;
+}
+.pad:hover{border-color:var(--amber-dim);}
+.pad.armed{border-color:var(--amber);}
+.pad.hit{transform:scale(.97);background:var(--panel-2);}
+.pad.empty{opacity:.55;}
+.pad-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.pad-name{font-size:11px;font-weight:600;color:var(--text);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pad-num{font-size:10px;color:var(--dim);font-family:'IBM Plex Mono',monospace;}
+.pad-bus{font-size:9px;color:var(--olive);letter-spacing:.05em;}
+.pad-mini{display:flex;gap:4px;align-items:center;margin-top:4px;}
+.pad-mini select, .pad-mini input[type=range]{width:100%;}
+input[type=range]{
+  -webkit-appearance:none;height:3px;background:var(--line);border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:10px;height:10px;border-radius:50%;background:var(--amber);cursor:pointer;
+}
+select{
+  background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:3px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px;
+}
+.pad-fileinput{display:none;}
+.pad-drop{position:absolute;inset:0;border-radius:6px;}
+.pad-row{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);gap:4px;}
+
+/* SEQUENCER */
+.seq-wrap{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;overflow-x:auto;}
+.seq-row{display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+.seq-label{width:84px;flex:0 0 84px;font-size:10px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.seq-steps{display:flex;gap:3px;}
+.step{
+  width:20px;height:20px;border-radius:3px;background:var(--bg);border:1px solid var(--line);cursor:pointer;
+}
+.step.beat{border-color:#4a4030;}
+.step.on{background:var(--olive);border-color:var(--olive);}
+.step.playhead{box-shadow:0 0 0 2px var(--amber);}
+.seq-controls{display:flex;gap:8px;margin-top:10px;align-items:center;}
+
+/* MIXER */
+.mixer{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;}
+.strip{
+  background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:10px;width:130px;flex:0 0 130px;display:flex;flex-direction:column;gap:8px;
+}
+.strip h3{font-size:11px;margin:0;color:var(--amber);}
+.strip.master h3{color:var(--red);}
+.knob-row{display:flex;flex-direction:column;gap:2px;}
+.knob-row label{font-size:9px;color:var(--dim);display:flex;justify-content:space-between;}
+.fader-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.fader-wrap input[type=range]{
+  -webkit-appearance:slider-vertical;width:6px;height:80px;
+}
+.mute-solo{display:flex;gap:4px;}
+.mute-solo button{flex:1;padding:3px;font-size:9px;}
+.mute-solo button.active{background:var(--red);color:#fff;border-color:var(--red);}
+.mute-solo button.solo-active{background:var(--amber);color:#1a1610;border-color:var(--amber);}
+
+/* AUTOMATION */
+.auto-block{display:flex;flex-direction:column;gap:3px;}
+.auto-block label{font-size:9px;color:var(--dim);}
+.auto-bars{display:flex;gap:1px;height:30px;align-items:flex-end;background:var(--bg);border-radius:3px;padding:2px;border:1px solid var(--line);}
+.auto-bar{flex:1;background:var(--olive-dim);border-radius:1px;cursor:pointer;min-height:2px;}
+.auto-bar:hover{background:var(--olive);}
+
+.note{font-size:10px;color:var(--dim);line-height:1.5;margin-top:18px;}
+.note b{color:var(--amber);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <h1>MUDDY</h1>
+      <span>groovebox &mdash; pads / sequencer / multibus</span>
+    </div>
+    <div class="transport">
+      <button id="playBtn" class="primary">▶ PLAY</button>
+      <div class="field">BPM <input type="number" id="bpmInput" value="90" min="40" max="220"></div>
+      <div class="field">SWING <input type="number" id="swingInput" value="0" min="0" max="60"></div>
+      <div class="field">PAGE <button id="pageBtn" class="ghost">A</button></div>
+      <button id="saveBtn" class="ghost">SAVE PROJECT</button>
+      <button id="loadBtn" class="ghost">LOAD PROJECT</button>
+    </div>
+  </div>
+
+  <div class="section-label">PADS — drag a sample onto a pad, or click to load</div>
+  <div class="pads" id="pads"></div>
+
+  <div class="section-label">SEQUENCER — 16 steps · page A/B = 32 total</div>
+  <div class="seq-wrap">
+    <div id="seqRows"></div>
+    <div class="seq-controls">
+      <button id="clearPatternBtn" class="ghost">CLEAR PAGE</button>
+      <span class="field" id="stepStatus"></span>
+    </div>
+  </div>
+
+  <div class="section-label">MIXER — per-bus filter / volume / step automation</div>
+  <div class="mixer" id="mixer"></div>
+
+  <p class="note">
+    Each pad routes to a <b>bus</b> (Drums / Bass / Melody / FX / Perc). Every bus has its own
+    low-pass filter, fader and a 16-step <b>automation lane</b> for both — draw a curve and it plays back
+    locked to the sequencer, the way Koala's step automation works but across every bus instead of one channel at a time.
+    Samples aren't saved into the project file (browser storage limits) — saving stores pad/bus/pattern/mixer state so you can
+    reload the same kit fast.
+  </p>
+</div>
+
+<script>
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioCtx();
+
+const NUM_PADS = 16;
+const NUM_STEPS = 16;
+const BUSES = ["Drums","Bass","Melody","FX","Perc"];
+const BUS_COLOR = {Drums:"#e8a33d",Bass:"#c5483b",Melody:"#7fa563",FX:"#8a8270",Perc:"#cdc6b4"};
+
+// ---------- audio graph: buses + master ----------
+const masterGain = ctx.createGain(); masterGain.gain.value = 0.9;
+const limiter = ctx.createDynamicsCompressor();
+limiter.threshold.value=-6; limiter.knee.value=4; limiter.ratio.value=12; limiter.attack.value=0.002; limiter.release.value=0.15;
+masterGain.connect(limiter); limiter.connect(ctx.destination);
+
+const busNodes = {};
+BUSES.forEach(name=>{
+  const input = ctx.createGain(); input.gain.value=1;
+  const filter = ctx.createBiquadFilter(); filter.type="lowpass"; filter.frequency.value=18000; filter.Q.value=0.7;
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value=-18; comp.ratio.value=3;
+  const out = ctx.createGain(); out.gain.value=0.85;
+  input.connect(filter); filter.connect(comp); comp.connect(out); out.connect(masterGain);
+  busNodes[name] = {input, filter, comp, out, muted:false, solo:false,
+    autoVol: new Array(32).fill(1), autoCutoff: new Array(32).fill(1)};
+});
+
+// ---------- pad state ----------
+const pads = [];
+for(let i=0;i<NUM_PADS;i++){
+  pads.push({
+    id:i, name:`PAD ${i+1}`, buffer:null, bus:BUSES[i%BUSES.length],
+    volume:0.9, pan:0, pitch:1, choke:0,
+    pattern:new Array(32).fill(false),
+    activeSources:[]
+  });
+}
+
+// ---------- UI: pads ----------
+const padsEl = document.getElementById('pads');
+function renderPads(){
+  padsEl.innerHTML='';
+  pads.forEach(pad=>{
+    const div = document.createElement('div');
+    div.className = 'pad'+(pad.buffer?'':' empty');
+    div.dataset.id = pad.id;
+    div.innerHTML = `
+      <input type="file" class="pad-fileinput" accept="audio/*">
+      <div class="pad-top">
+        <div>
+          <div class="pad-name">${pad.name}</div>
+          <div class="pad-bus" style="color:${BUS_COLOR[pad.bus]}">${pad.bus}</div>
+        </div>
+        <div class="pad-num">${String(pad.id+1).padStart(2,'0')}</div>
+      </div>
+      <div class="pad-mini">
+        <select class="bus-select">
+          ${BUSES.map(b=>`<option value="${b}" ${b===pad.bus?'selected':''}>${b}</option>`).join('')}
+        </select>
+        <select class="choke-select">
+          ${[0,1,2,3,4].map(c=>`<option value="${c}" ${c===pad.choke?'selected':''}>${c===0?'no choke':'choke '+c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="pad-row">
+        <span>vol</span><input type="range" class="vol-range" min="0" max="1" step="0.01" value="${pad.volume}">
+      </div>
+      <div class="pad-row">
+        <span>pitch</span><input type="range" class="pitch-range" min="0.5" max="2" step="0.01" value="${pad.pitch}">
+      </div>
+    `;
+    padsEl.appendChild(div);
+
+    const fileInput = div.querySelector('.pad-fileinput');
+    div.addEventListener('click', (e)=>{
+      if(e.target.tagName==='SELECT'||e.target.tagName==='INPUT') return;
+      if(!pad.buffer){ fileInput.click(); return; }
+      triggerPad(pad);
+      div.classList.add('hit'); setTimeout(()=>div.classList.remove('hit'),90);
+    });
+    fileInput.addEventListener('click', e=>e.stopPropagation());
+    fileInput.addEventListener('change', e=>{
+      if(e.target.files[0]) loadSampleIntoPad(pad, e.target.files[0]);
+    });
+    div.addEventListener('dragover', e=>{e.preventDefault(); div.style.borderColor='#e8a33d';});
+    div.addEventListener('dragleave', e=>{div.style.borderColor='';});
+    div.addEventListener('drop', e=>{
+      e.preventDefault(); div.style.borderColor='';
+      const f = e.dataTransfer.files[0];
+      if(f) loadSampleIntoPad(pad,f);
+    });
+    div.querySelector('.bus-select').addEventListener('click',e=>e.stopPropagation());
+    div.querySelector('.bus-select').addEventListener('change',e=>{ pad.bus=e.target.value; renderPads(); });
+    div.querySelector('.choke-select').addEventListener('click',e=>e.stopPropagation());
+    div.querySelector('.choke-select').addEventListener('change',e=>{ pad.choke=parseInt(e.target.value); });
+    div.querySelector('.vol-range').addEventListener('click',e=>e.stopPropagation());
+    div.querySelector('.vol-range').addEventListener('input',e=>{ pad.volume=parseFloat(e.target.value); });
+    div.querySelector('.pitch-range').addEventListener('click',e=>e.stopPropagation());
+    div.querySelector('.pitch-range').addEventListener('input',e=>{ pad.pitch=parseFloat(e.target.value); });
+  });
+}
+renderPads();
+
+async function loadSampleIntoPad(pad, file){
+  const arrayBuf = await file.arrayBuffer();
+  try{
+    const audioBuf = await ctx.decodeAudioData(arrayBuf);
+    pad.buffer = audioBuf;
+    pad.name = file.name.replace(/\.[^/.]+$/,'').slice(0,18).toUpperCase();
+    renderPads(); renderSeq();
+  }catch(err){
+    alert('Could not decode that audio file.');
+  }
+}
+
+function triggerPad(pad, time=ctx.currentTime, velocity=1){
+  if(!pad.buffer) return;
+  if(pad.choke>0){
+    pads.filter(p=>p.choke===pad.choke).forEach(p=>{
+      p.activeSources.forEach(s=>{ try{s.stop(time);}catch(e){} });
+      p.activeSources=[];
+    });
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = pad.buffer;
+  src.playbackRate.value = pad.pitch;
+  const gain = ctx.createGain();
+  gain.gain.value = pad.volume * velocity;
+  const panNode = ctx.createStereoPanner();
+  panNode.pan.value = pad.pan;
+  src.connect(gain); gain.connect(panNode); panNode.connect(busNodes[pad.bus].input);
+  src.start(time);
+  pad.activeSources.push(src);
+  src.onended = ()=>{ pad.activeSources = pad.activeSources.filter(s=>s!==src); };
+}
+
+// ---------- UI: sequencer ----------
+let currentPage = 0; // 0 = steps 0-15, 1 = steps 16-31
+const seqRowsEl = document.getElementById('seqRows');
+function renderSeq(){
+  seqRowsEl.innerHTML='';
+  pads.forEach(pad=>{
+    const row = document.createElement('div'); row.className='seq-row';
+    const label = document.createElement('div'); label.className='seq-label';
+    label.textContent = pad.name; row.appendChild(label);
+    const stepsWrap = document.createElement('div'); stepsWrap.className='seq-steps';
+    for(let s=0;s<NUM_STEPS;s++){
+      const stepIdx = currentPage*16+s;
+      const stepEl = document.createElement('div');
+      stepEl.className = 'step'+(s%4===0?' beat':'')+(pad.pattern[stepIdx]?' on':'');
+      stepEl.dataset.step = stepIdx; stepEl.dataset.pad = pad.id;
+      stepEl.addEventListener('click', ()=>{
+        pad.pattern[stepIdx] = !pad.pattern[stepIdx];
+        stepEl.classList.toggle('on');
+      });
+      stepsWrap.appendChild(stepEl);
+    }
+    row.appendChild(stepsWrap);
+    seqRowsEl.appendChild(row);
+  });
+}
+renderSeq();
+document.getElementById('pageBtn').addEventListener('click', e=>{
+  currentPage = currentPage===0?1:0;
+  e.target.textContent = currentPage===0?'A':'B';
+  renderSeq();
+});
+document.getElementById('clearPatternBtn').addEventListener('click',()=>{
+  pads.forEach(p=>{ for(let s=0;s<16;s++) p.pattern[currentPage*16+s]=false; });
+  renderSeq();
+});
+
+// ---------- UI: mixer ----------
+const mixerEl = document.getElementById('mixer');
+function renderMixer(){
+  mixerEl.innerHTML='';
+  [...BUSES,'MASTER'].forEach(name=>{
+    const isMaster = name==='MASTER';
+    const node = isMaster? null : busNodes[name];
+    const strip = document.createElement('div'); strip.className='strip'+(isMaster?' master':'');
+    strip.innerHTML = `
+      <h3>${name}</h3>
+      <div class="knob-row">
+        <label>CUTOFF <span class="cutoffVal">18k</span></label>
+        <input type="range" class="cutoff-range" min="200" max="18000" step="50" value="${isMaster?18000:node.filter.frequency.value}" ${isMaster?'disabled':''}>
+      </div>
+      <div class="fader-wrap">
+        <input type="range" class="vol-range" orient="vertical" min="0" max="1" step="0.01" value="${isMaster?masterGain.gain.value:node.out.gain.value}">
+        <span class="volVal">--</span>
+      </div>
+      ${isMaster?'':`<div class="mute-solo">
+        <button class="muteBtn">MUTE</button>
+        <button class="soloBtn">SOLO</button>
+      </div>`}
+      ${isMaster?'':`
+      <div class="auto-block">
+        <label>VOL AUTOMATION</label>
+        <div class="auto-bars vol-auto"></div>
+      </div>
+      <div class="auto-block">
+        <label>CUTOFF AUTOMATION</label>
+        <div class="auto-bars cutoff-auto"></div>
+      </div>`}
+    `;
+    mixerEl.appendChild(strip);
+
+    const cutoffRange = strip.querySelector('.cutoff-range');
+    const cutoffVal = strip.querySelector('.cutoffVal');
+    cutoffVal.textContent = isMaster? '18k' : Math.round(node.filter.frequency.value/1000*10)/10+'k';
+    if(!isMaster){
+      cutoffRange.addEventListener('input', e=>{
+        const v = parseFloat(e.target.value);
+        node.filter.frequency.setTargetAtTime(v, ctx.currentTime, 0.01);
+        cutoffVal.textContent = Math.round(v/1000*10)/10+'k';
+      });
+    }
+    const volRange = strip.querySelector('.vol-range');
+    volRange.addEventListener('input', e=>{
+      const v = parseFloat(e.target.value);
+      if(isMaster) masterGain.gain.setTargetAtTime(v, ctx.currentTime, 0.01);
+      else node.out.gain.setTargetAtTime(v, ctx.currentTime, 0.01);
+    });
+
+    if(!isMaster){
+      const muteBtn = strip.querySelector('.muteBtn');
+      const soloBtn = strip.querySelector('.soloBtn');
+      muteBtn.addEventListener('click', ()=>{
+        node.muted = !node.muted;
+        muteBtn.classList.toggle('active', node.muted);
+        applyMuteSolo();
+      });
+      soloBtn.addEventListener('click', ()=>{
+        node.solo = !node.solo;
+        soloBtn.classList.toggle('solo-active', node.solo);
+        applyMuteSolo();
+      });
+
+      // automation bars
+      ['vol','cutoff'].forEach(kind=>{
+        const wrap = strip.querySelector(kind==='vol'?'.vol-auto':'.cutoff-auto');
+        const arr = kind==='vol'? node.autoVol : node.autoCutoff;
+        for(let s=0;s<16;s++){
+          const idx = currentPage*16+s;
+          const bar = document.createElement('div');
+          bar.className='auto-bar';
+          bar.style.height = (arr[idx]*100)+'%';
+          let dragging=false;
+          const setVal = (clientY)=>{
+            const rect = wrap.getBoundingClientRect();
+            let pct = 1 - (clientY-rect.top)/rect.height;
+            pct = Math.max(0.05, Math.min(1, pct));
+            arr[idx]=pct; bar.style.height=(pct*100)+'%';
+          };
+          bar.addEventListener('mousedown', e=>{dragging=true; setVal(e.clientY);});
+          window.addEventListener('mouseup', ()=>dragging=false);
+          wrap.addEventListener('mousemove', e=>{ if(dragging) setVal(e.clientY); });
+          bar.addEventListener('click', e=> setVal(e.clientY));
+          wrap.appendChild(bar);
+        }
+      });
+    }
+  });
+}
+function applyMuteSolo(){
+  const anySolo = BUSES.some(b=>busNodes[b].solo);
+  BUSES.forEach(b=>{
+    const node = busNodes[b];
+    const shouldPlay = anySolo ? node.solo : !node.muted;
+    node.input.gain.value = shouldPlay ? 1 : 0;
+  });
+}
+renderMixer();
+
+// ---------- sequencer engine (lookahead scheduler) ----------
+let isPlaying=false, currentStep=0, nextStepTime=0;
+const lookahead=25, scheduleAheadTime=0.1;
+let timerID=null;
+
+function stepLengthSec(){
+  const bpm = parseFloat(document.getElementById('bpmInput').value)||90;
+  return 60/bpm/4; // 16th notes
+}
+function swingOffset(stepIndexWithinBar){
+  const swing = parseFloat(document.getElementById('swingInput').value)||0;
+  const isOffbeat = stepIndexWithinBar % 2 === 1;
+  return isOffbeat ? (swing/100) * stepLengthSec() * 0.5 : 0;
+}
+
+function scheduler(){
+  while(nextStepTime < ctx.currentTime + scheduleAheadTime){
+    scheduleStep(currentStep, nextStepTime);
+    const dur = stepLengthSec();
+    nextStepTime += dur + swingOffset(currentStep%16);
+    currentStep = (currentStep+1) % 32;
+  }
+  timerID = setTimeout(scheduler, lookahead);
+}
+
+function scheduleStep(stepIdx, time){
+  pads.forEach(pad=>{
+    if(pad.pattern[stepIdx]) triggerPad(pad, time, 1);
+  });
+  BUSES.forEach(name=>{
+    const node = busNodes[name];
+    const v = node.autoVol[stepIdx];
+    const c = node.autoCutoff[stepIdx];
+    node.out.gain.setValueAtTime(node.out.gain.value, time);
+    node.out.gain.linearRampToValueAtTime(v, time+0.02);
+    const freq = 200 + c*17800;
+    node.filter.frequency.setValueAtTime(node.filter.frequency.value, time);
+    node.filter.frequency.linearRampToValueAtTime(freq, time+0.02);
+  });
+  // visual playhead
+  setTimeout(()=>highlightStep(stepIdx), Math.max(0,(time-ctx.currentTime)*1000));
+}
+
+function highlightStep(stepIdx){
+  document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
+  if(Math.floor(stepIdx/16) === currentPage){
+    const el = document.querySelector(`.step[data-step="${stepIdx}"]`);
+    if(el) el.classList.add('playhead');
+  }
+  document.getElementById('stepStatus').textContent = 'step '+(stepIdx+1)+' / 32';
+}
+
+document.getElementById('playBtn').addEventListener('click', async ()=>{
+  if(ctx.state==='suspended') await ctx.resume();
+  const btn = document.getElementById('playBtn');
+  if(!isPlaying){
+    isPlaying=true; btn.textContent='■ STOP'; btn.classList.add('playing');
+    currentStep=0; nextStepTime=ctx.currentTime+0.05;
+    scheduler();
+  }else{
+    isPlaying=false; btn.textContent='▶ PLAY'; btn.classList.remove('playing');
+    clearTimeout(timerID);
+    document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
+  }
+});
+
+// ---------- save / load project (structure only, not audio) ----------
+function serializeProject(){
+  return {
+    bpm: document.getElementById('bpmInput').value,
+    swing: document.getElementById('swingInput').value,
+    pads: pads.map(p=>({name:p.name, bus:p.bus, volume:p.volume, pitch:p.pitch, choke:p.choke, pattern:p.pattern})),
+    buses: Object.fromEntries(BUSES.map(b=>{
+      const n=busNodes[b];
+      return [b,{volume:n.out.gain.value, cutoff:n.filter.frequency.value, autoVol:n.autoVol, autoCutoff:n.autoCutoff}];
+    })),
+    masterVolume: masterGain.gain.value
+  };
+}
+function applyProject(proj){
+  document.getElementById('bpmInput').value = proj.bpm;
+  document.getElementById('swingInput').value = proj.swing;
+  proj.pads.forEach((pd,i)=>{
+    const pad = pads[i]; if(!pad) return;
+    pad.name=pd.name; pad.bus=pd.bus; pad.volume=pd.volume; pad.pitch=pd.pitch; pad.choke=pd.choke; pad.pattern=pd.pattern;
+  });
+  Object.entries(proj.buses).forEach(([b,cfg])=>{
+    const n = busNodes[b]; if(!n) return;
+    n.out.gain.value = cfg.volume; n.filter.frequency.value = cfg.cutoff;
+    n.autoVol = cfg.autoVol; n.autoCutoff = cfg.autoCutoff;
+  });
+  masterGain.gain.value = proj.masterVolume;
+  renderPads(); renderSeq(); renderMixer();
+}
+
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  if(!window.storage){ alert('Project storage only works inside Claude.ai — download the file to keep using it elsewhere.'); return; }
+  const name = prompt('Project name?','muddy-tape-01');
+  if(!name) return;
+  try{
+    await window.storage.set('groovebox-project:'+name, JSON.stringify(serializeProject()), false);
+    alert('Saved as "'+name+'".');
+  }catch(err){ alert('Save failed: '+err); }
+});
+document.getElementById('loadBtn').addEventListener('click', async ()=>{
+  if(!window.storage){ alert('Project storage only works inside Claude.ai.'); return; }
+  const name = prompt('Project name to load?','muddy-tape-01');
+  if(!name) return;
+  try{
+    const res = await window.storage.get('groovebox-project:'+name, false);
+    if(!res){ alert('No project found with that name.'); return; }
+    applyProject(JSON.parse(res.value));
+  }catch(err){ alert('Nothing found, or load failed.'); }
+});
+
+// ---------- PWA: offline support ----------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* not hosted yet, ignore */ });
+  });
+}
+</script>
+</body>
+</html>
